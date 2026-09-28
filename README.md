@@ -2,8 +2,7 @@
 A self correcting multi-agent system where specialized AI agents work together to generate, review, and automatically improve content.
 
 A small, runnable demonstration of a self-correcting AI workflow. The app uses
-LangGraph to coordinate three agents backed by DigitalOcean Serverless
-Inference:
+LangGraph to coordinate three agents by Grok:
 
 ```text
 Topic -> Writer -> Reviewer -- PASS ------> Final answer
@@ -24,8 +23,7 @@ execution trace.
 
 - FastAPI web application with a simple browser interface.
 - LangGraph state machine for the Writer, Reviewer, and Reviser loop.
-- DigitalOcean Serverless Inference through its OpenAI-compatible endpoint.
-- Optional DigitalOcean Inference Router support.
+- Grok through its OpenAI-compatible endpoint.
 - Separate model configuration for each agent.
 - Strict Pydantic validation of reviewer decisions.
 - JSON API and command-line demo entry points.
@@ -48,8 +46,6 @@ execution trace.
 ## Requirements
 
 - Python 3.11 or newer
-- A DigitalOcean Model Access Key
-- Access to DigitalOcean Serverless Inference
 
 ## Installation
 
@@ -64,19 +60,19 @@ python -m pip install -r requirements.txt
 ### Virtual environment
 
 ```bash
-python -m venv .venv
+python -m venv venv
 ```
 
 Activate it with the command for your shell:
 
 ```powershell
 # Windows PowerShell
-.\.venv\Scripts\Activate.ps1
+.\venv\Scripts\Activate.ps1
 ```
 
 ```bash
 # macOS/Linux
-source .venv/bin/activate
+source venv/bin/activate
 ```
 
 Then install the dependencies:
@@ -91,9 +87,8 @@ Create a `.env` file in the project root. Never commit this file or expose the
 access key in source control, browser code, screenshots, or logs.
 
 ```dotenv
-MODEL_ACCESS_KEY=replace_with_your_digitalocean_model_access_key
-DO_INFERENCE_BASE_URL=https://inference.do-ai.run/v1
-DO_MODEL=kimi-k3
+GROQ_API_KEY=replace_with_your_groq_api_key
+GROQ_MODEL= openai/gpt-oss-20b
 MAX_REVISIONS=3
 ```
 
@@ -103,26 +98,20 @@ The application loads `.env` automatically through `python-dotenv`.
 
 | Variable | Required | Default | Description |
 | --- | --- | --- | --- |
-| `MODEL_ACCESS_KEY` | Yes for runs | Empty | DigitalOcean Model Access Key. |
-| `DO_INFERENCE_BASE_URL` | No | `https://inference.do-ai.run/v1` | OpenAI-compatible inference endpoint. |
-| `DO_MODEL` | No | `kimi-k3` | Fallback model used by all agents. |
-| `DO_WRITER_MODEL` | No | `DO_MODEL` | Direct model for the Writer. |
-| `DO_REVIEWER_MODEL` | No | `DO_MODEL` | Direct model for the Reviewer. |
-| `DO_REVISER_MODEL` | No | `DO_MODEL` | Direct model for the Reviser. |
-| `DO_INFERENCE_ROUTER` | No | Empty | Router name. When set, all agents use `router:<name>`. |
+| `GROQ_API_KEY` | Yes for runs | Empty | GROQ API Key. |
+| `GROQ_MODEL` | No | `openai/gpt-oss-20b` | Fallback model used by all agents. |
+| `GROQ_WRITER_MODEL` | No | `GROQ_MODEL` | Direct model for the Writer. |
+| `GROQ_REVIEWER_MODEL` | No | `GROQ_MODEL` | Direct model for the Reviewer. |
+| `GROQ_REVISER_MODEL` | No | `GROQ_MODEL` | Direct model for the Reviser. |
 | `MAX_REVISIONS` | No | `3` | Maximum number of Reviser passes before returning the latest draft. |
 
 To configure different direct models, for example:
 
 ```dotenv
-DO_WRITER_MODEL=kimi-k3
-DO_REVIEWER_MODEL=kimi-k3
-DO_REVISER_MODEL=kimi-k3
+GROQ_WRITER_MODEL= openai/gpt-oss-20b
+GROQ_REVIEWER_MODEL= openai/gpt-oss-20b
+GROQ_REVISER_MODEL= openai/gpt-oss-20b
 ```
-
-When `DO_INFERENCE_ROUTER` is set, the direct model names are replaced by the
-router model identifier for all three agents. The agents remain distinct
-through their system prompts.
 
 ## Run the web application
 
@@ -195,20 +184,17 @@ response contains:
 			"decision": "",
 			"feedback": "",
 			"revision_count": 0,
-			"provider": "DigitalOcean Serverless Inference",
-			"model": "kimi-k3"
+			"provider": "GROQ",
+			"model": "openai/gpt-oss-20b"
 		}
 	],
 	"final_answer": "...",
 	"final_decision": "PASS",
 	"revision_count": 1,
-	"provider": "DigitalOcean Serverless Inference",
-	"endpoint": "https://inference.do-ai.run/v1",
-	"router_enabled": false,
-	"router": null,
-	"writer_model": "kimi-k3",
-	"reviewer_model": "kimi-k3",
-	"reviser_model": "kimi-k3",
+	"provider": "GROQ",
+	"writer_model": "openai/gpt-oss-20b",
+	"reviewer_model": "openai/gpt-oss-20b",
+	"reviser_model": "openai/gpt-oss-20b",
 	"max_revisions": 3
 }
 ```
@@ -217,7 +203,7 @@ Validation failures return HTTP `422`. Empty input is rejected with HTTP
 `400`; workflow or inference failures return HTTP `500` with a diagnostic
 message.
 
-## Deploy to DigitalOcean App Platform
+## Deploy to Render Cloud Platform
 
 1. Push the project to a Git repository.
 2. Create an App Platform app from that repository.
@@ -233,7 +219,7 @@ message.
 	 python app.py
 	 ```
 
-5. Add `MODEL_ACCESS_KEY` as an encrypted App Platform environment variable.
+5. Add `GROQ_API_KEY` as an encrypted App Platform environment variable.
 6. Add any optional model, router, or `MAX_REVISIONS` variables.
 7. Deploy and open the generated app URL.
 
@@ -269,7 +255,7 @@ example, and topic focus. Reviewer output is parsed and validated as:
 
 ## Troubleshooting
 
-### `MODEL_ACCESS_KEY is missing`
+### `GROQ_API_KEY is missing`
 
 Check that `.env` is in the same directory as `backend.py`, that the variable
 name is spelled exactly as shown, and that the process was restarted after
@@ -289,7 +275,7 @@ command and that the service listens on `0.0.0.0`.
 
 ## Security notes
 
-- Treat `MODEL_ACCESS_KEY` as a password.
+- Treat `GROQ_API_KEY` as a password.
 - Rotate any key that has been exposed or committed.
 - Keep credentials in `.env` locally or encrypted platform environment
 	variables in production.

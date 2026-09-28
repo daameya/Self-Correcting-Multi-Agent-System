@@ -64,7 +64,7 @@ async function runAgentLoop() {
     runButton.disabled = true;
     runButton.textContent = "Agents are working…";
     results.classList.add("hidden");
-    setStatus("Running Writer → Reviewer → Reviser through Grok…");
+    setStatus("Running Writer → Reviewer → Reviser through Groq…");
 
     try {
         const response = await fetch("/api/run", {
